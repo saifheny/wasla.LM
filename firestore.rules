@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    // الأدمن بيتحدد بـ custom claim بيتضاف من Admin SDK بس (مش من حقل في الداتا)
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function reqDoc(rid) { return get(/databases/$(db)/documents/requests/$(rid)).data; }
+
+    // ملف المستخدم (خاص)
+    match /users/{uid} {
+      allow read: if owner(uid) || isAdmin();
+      allow create, update: if owner(uid)
+        && request.resource.data.roles.hasOnly(['customer', 'provider']);
+      allow delete: if isAdmin();
+    }
+
+    // ملف مقدم الخدمة (عام)، والحقول الحساسة بتتعدل من الإدارة أو الدوال بس
+    match /providers/{uid} {
+      allow read: if true;
+      allow create: if owner(uid)
+        && request.resource.data.get('verified', false) == false
+        && request.resource.data.get('ratingCount', 0) == 0;
+      allow update: if owner(uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['verified', 'ratingAvg', 'ratingCount', 'boostUntil', 'plan', 'suspended']);
+      allow write: if isAdmin();
+      match /works/{wid} {
+        allow read: if true;
+        allow write: if owner(uid) || isAdmin();
+      }
+    }
+
+    // الأقسام
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // الطلبات
+    match /requests/{rid} {
+      allow read: if true; // الطلبات عامة علشان الزائر يتصفح (مفيش أرقام موبايل فيها)
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'new';
+      allow update: if owner(resource.data.ownerId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'title', 'description', 'budget', 'neededBy', 'contactPref', 'updatedAt']);
+      allow write: if isAdmin();
+
+      // العروض
+      match /offers/{oid} {
+        allow read: if signedIn()
+          && (resource.data.providerId == request.auth.uid || reqDoc(rid).ownerId == request.auth.uid);
+        allow create: if signedIn()
+          && request.resource.data.providerId == request.auth.uid
+          && reqDoc(rid).ownerId != request.auth.uid
+          && request.resource.data.status == 'pending';
+        allow update: if signedIn() && reqDoc(rid).ownerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+        allow delete: if owner(resource.data.providerId) || isAdmin();
+      }
+
+      // سجل التوزيع بتكتبه الدوال بس
+      match /dispatches/{pid} {
+        allow read: if owner(pid) || owner(reqDoc(rid).ownerId) || isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // المحادثات
+    match /conversations/{cid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn() && request.auth.uid in request.resource.data.participants;
+      allow update: if signedIn() && request.auth.uid in resource.data.participants;
+      match /messages/{mid} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(db)/documents/conversations/$(cid)).data.participants;
+        allow create: if signedIn() && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(db)/documents/conversations/$(cid)).data.participants;
+      }
+    }
+
+    // الإشعارات: المستخدم يقرأها ويعلّمها مقروءة، والدوال بتنشئها
+    match /notifications/{uid}/items/{nid} {
+      allow read: if owner(uid);
+      allow update: if owner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create: if false;
+      allow delete: if owner(uid);
+    }
+
+    // التقييمات: رقم الوثيقة = رقم الطلب (تقييم واحد لكل طلب) ولطلب مكتمل بس
+    match /reviews/{rid} {
+      allow read: if true;
+      allow create: if signedIn()
+        && rid == request.resource.data.requestId
+        && request.resource.data.customerId == request.auth.uid
+        && reqDoc(rid).ownerId == request.auth.uid
+        && reqDoc(rid).status == 'completed'
+        && request.resource.data.stars is int
+        && request.resource.data.stars >= 1 && request.resource.data.stars <= 5;
+      allow update, delete: if isAdmin();
+    }
+
+    // البلاغات
+    match /reports/{id} {
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // الباقات والإعلانات
+    match /plans/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /ads/{id}   { allow read: if true; allow write: if isAdmin(); }
+  }
+}
