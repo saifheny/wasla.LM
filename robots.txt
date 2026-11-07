@@ -4,4 +4,4 @@ Disallow: /functions/
 Disallow: /src/
 Disallow: /scripts/
 
-Sitemap: https://story-97cf7.web.app/sitemap.xml
+Sitemap: https://saifheny.github.io/wasla.LM/sitemap.xml

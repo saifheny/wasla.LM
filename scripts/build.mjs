@@ -59,6 +59,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: mediastream:",
   "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasestorage.app https://*.gstatic.com https://cdnjs.cloudflare.com https://us-central1-story-97cf7.cloudfunctions.net",
   "frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com",
   "object-src 'none'",

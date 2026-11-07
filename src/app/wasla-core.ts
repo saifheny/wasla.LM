@@ -53,6 +53,11 @@ function toast(msg: string) {
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => e.classList.remove('on'), 3100);
 }
+function hideToast() {
+  clearTimeout(_toastTimer);
+  const e = $('#toast');
+  if (e) e.classList.remove('on');
+}
 
 /* ====== الأيقونات والرسومات المتجهة ====== */
 const ICO = {
@@ -274,73 +279,187 @@ const CATS = [
   ['صيانة وصنايعية', 'wrench', '#4BD4BE'],
   ['دروس وتعليم', 'book', '#9C89FF'],
   ['بيع وشرا ومستعمل', 'cart', '#F7A56C'],
-  ['شركات وتشطيبات', 'building', '#55B9DB'],
+  ['شركات وخدمات متنوعة', 'building', '#55B9DB'],
   ['تجارة وتوريد جملة', 'box', '#FAD2CC']
 ];
 const SUBS = [
-  ['نقل عفش شقة', 'ربع نقل وبضائع', 'شحن محافظات', 'ونش رفع عفش', 'سحب وإنقاذ عربيات'],
-  ['سباكة', 'كهرباء', 'نجارة', 'نقاشة ودهانات', 'تكييف وتبريد', 'تصليح أجهزة منزلية', 'ألوميتال وحدادة'],
-  ['دروس خصوصية', 'تأسيس أطفال', 'لغات وكورسات', 'برمجة وكمبيوتر', 'تحفيظ قرآن'],
-  ['موبايلات وإلكترونيات', 'أجهزة كهربائية', 'عفش مستعمل', 'عربيات وموتوسيكلات', 'هدوم ومستلزمات'],
-  ['نظافة شقق بعد التشطيب', 'تشطيب وديكور', 'أمن وحراسة', 'تسويق وتصميم', 'تخليص أوراق ومحاسبة'],
-  ['مواد غذائية جملة', 'مستلزمات محلات', 'مواد بناء وتشطيب', 'ملابس ومنسوجات جملة']
+  ['نقل عفش شقة', 'ربع نقل وبضائع', 'شحن محافظات', 'ونش رفع عفش', 'سحب وإنقاذ عربيات', 'توصيل ومشاوير خاصة'],
+  ['سباكة', 'كهرباء', 'نجارة', 'نقاشة ودهانات', 'تكييف وتبريد', 'تصليح أجهزة منزلية', 'ألوميتال وحدادة', 'سيراميك ومحارة وجبس', 'كاميرات مراقبة وإنتركوم', 'فلاتر مياه وسخانات', 'ميكانيكا وكهرباء سيارات'],
+  ['دروس خصوصية', 'تأسيس أطفال', 'لغات وكورسات', 'برمجة وكمبيوتر', 'تحفيظ قرآن', 'تدريب ومهارات'],
+  ['موبايلات وإلكترونيات', 'أجهزة كهربائية', 'عفش مستعمل', 'عربيات وموتوسيكلات', 'هدوم ومستلزمات', 'معدات وعدد'],
+  ['نظافة شقق ومنازل', 'تشطيب وديكور', 'تمريض ورعاية منزلية', 'طبخ وحلويات بيتي', 'تصوير ومونتاج وتصميم', 'خياطة وتفصيل', 'أمن وحراسة', 'تخليص أوراق ومحاسبة'],
+  ['مواد غذائية جملة', 'مستلزمات محلات', 'مواد بناء وتشطيب', 'ملابس ومنسوجات جملة', 'توريد وتجهيز عام']
 ];
 const KW = [
-  [0, 'نقل شحن اثاث أثاث عفش توصيل سيارة عربيه ربع ونش شيال عزال'],
-  [1, 'كهرباء كهربائي سباك سباكه نجار نقاش دهان صيانة تصليح تكييف ثلاجه غساله ماسورة حنفيه مفتاح'],
-  [2, 'مدرس درس دروس تعليم مذاكرة ثانوية حصة تأسيس كورس انجليزي عربي رياضيات فيزياء قران'],
-  [3, 'بيع شراء اشتري أبيع جهاز موبايل لابتوب شاشه مستعمل كسر زيرو'],
-  [4, 'تنظيف شركة تشطيب نظافة ديكور سيراميك محاره واجهه'],
-  [5, 'توريد جملة تجارة كرتونة بضاعة مخزن مصنع']
+  [0, 'نقل شحن اثاث أثاث عفش توصيل سيارة عربيه ربع ونش شيال عزال مشوار دليفري'],
+  [1, 'كهرباء كهربائي سباك سباكه نجار نقاش دهان صيانة تصليح تكييف ثلاجه غساله ماسورة حنفيه مفتاح سيراميك محاره كاميرات فلتر سخان ميكانيكي'],
+  [2, 'مدرس درس دروس تعليم مذاكرة ثانوية حصة تأسيس كورس انجليزي عربي رياضيات فيزياء قران تدريب'],
+  [3, 'بيع شراء اشتري أبيع جهاز موبايل لابتوب شاشه مستعمل كسر زيرو معدات'],
+  [4, 'تنظيف شركة تشطيب نظافة ديكور تمريض ممرض رعايه مسنين طبخ شيف تصوير مونتاج تصميم جرافيك خياطه تفصيل محامي ورق محاسبه امن حراسه'],
+  [5, 'توريد جملة تجارة كرتونة بضاعة مخزن مصنع تجهيز']
 ];
 const cic = i => ic((CATS[i] || CATS[0])[1], 15);
 
-/* ====== تحديد الموقع والإشعارات (إجباري وقت التسجيل فقط + تحديث أسبوعي تلقائي) ====== */
+/* ====== فحص متصفحات السوشيال الداخلية + أذونات الموبايل الذكية (الموقع + المايكروفون + الإشعارات) ====== */
 let PUSH_ON = typeof Notification !== 'undefined' && Notification.permission === 'granted' && store.get('push') !== 'off';
+let PUSH_FALLBACK_OK = store.get('wasla_push_fbk') === '1';
 let MY: any = { on: false };
+let _lastLocCb: any = null;
+let _lastVoiceTarget: any = null;
+let _micPrimed = false;
 
-function locateNow(cb?: any, silent = false) {
-  if (!navigator.geolocation) {
-    if (!silent) toast('المتصفح ده مش بيدعم تحديد الموقع الجغرافي.');
+function isInAppBrowser(): boolean {
+  const ua = String((typeof navigator !== 'undefined' && navigator.userAgent) || '');
+  return /(FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/|TikTok|BytedanceWebview|Snapchat|MicroMessenger|; wv\)|\bWebView\b)/i.test(ua);
+}
+
+function isAndroidDevice(): boolean {
+  return /Android/i.test(String((typeof navigator !== 'undefined' && navigator.userAgent) || ''));
+}
+
+function openInExternalChrome() {
+  const cleanHref = location.href.startsWith('http') ? location.href : 'https://saifheny.github.io/wasla.LM/';
+  if (isAndroidDevice()) {
+    const noProto = cleanHref.replace(/^https?:\/\//i, '');
+    const scheme = cleanHref.startsWith('http:') ? 'http' : 'https';
+    location.href = `intent://${noProto}#Intent;scheme=${scheme};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(cleanHref)};end`;
     return;
   }
-  if (!silent) toast('لحظة بنحدد موقعك...');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cleanHref).then(() => toast('اتنسخ الرابط — افتح Safari أو Chrome والصقه هناك ✓')).catch(() => {});
+  }
+  window.open(cleanHref, '_blank', 'noopener');
+}
+
+function showPermHelpModal(kind: 'mic' | 'loc' | 'speech-service') {
+  hideToast();
+  const inApp = isInAppBrowser();
+  const insecure = typeof window !== 'undefined' && !window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+  const isLoc = kind === 'loc';
+  const title = isLoc ? 'تفعيل إذن الموقع على موبايلك' : 'تفعيل المايكروفون والكتابة بالصوت';
+
+  if (insecure) {
+    openModal(`
+      <h2>${title}</h2>
+      <p style="font-size:.9rem;line-height:1.7">المتصفح على الموبايل بيقفل نافذة الموافقة على المايكروفون والموقع لو الرابط مش آمن (<b dir="ltr">HTTPS</b>).</p>
+      <div class="meta" style="margin-top:8px">
+        <a class="btn mint" style="flex:1;text-align:center;text-decoration:none" href="https://saifheny.github.io/wasla.LM/">افتح الرابط الآمن الرسمي ◂</a>
+        <button class="btn white" type="button" data-a="x">إغلاق</button>
+      </div>
+    `);
+    return;
+  }
+
+  const inAppBanner = inApp ? `
+    <div class="ofr" style="border-style:solid;background:var(--sun);gap:8px">
+      <b>إنت فاتح الرابط جوه تطبيق تواصل اجتماعي!</b>
+      <span style="font-size:.85rem;line-height:1.6">المتصفح الداخلي لفيسبوك/ماسنجر/إنستجرام بيمنع ظهور رسالة «موافق / سماح» للصوت والموقع. دوس الزر تحت هيفتحلك الموقع فوراً في متصفح <b>Chrome</b> العادي وهيشتغل كل حاجة معاك:</span>
+      <button class="btn coral" type="button" data-a="openExtBrowser">${ic('share', 15)} افتح وصلة في متصفح Chrome الخارجي</button>
+    </div>
+  ` : '';
+
+  const stepsHtml = isLoc ? `
+    <div class="perm-steps">
+      <div class="perm-step"><b class="st-num">1</b><span>اتأكد إن علامة <b>الموقع (Location / GPS)</b> شغّالة من شريط الإشعارات فوق في الموبايل.</span></div>
+      <div class="perm-step"><b class="st-num">2</b><span>اضغط على <b>علامة الضبط أو القفل 🔒</b> اللي جنب عنوان الرابط فوق في المتصفح ⬅ اختار <b>الأذونات (Permissions)</b> ⬅ خلّي <b>الموقع الجغرافي: سماح (Allow)</b>.</span></div>
+    </div>
+  ` : kind === 'speech-service' ? `
+    <div class="perm-steps">
+      <div class="perm-step"><b class="st-num">1</b><span>المتصفح الحالي قافل محرك تحويل الصوت لنص — افتح الموقع من متصفح <b>Google Chrome</b> على الموبايل وهتشتغل معاك فوراً.</span></div>
+      <div class="perm-step"><b class="st-num">2</b><span>أو تقدر في أي خانة كتابة تدوس على <b>علامة المايكروفون 🎤 اللي في كيبورد الموبايل</b> وهيكتب كلامك بالعربي تلقائي برضه!</span></div>
+    </div>
+  ` : `
+    <div class="perm-steps">
+      <div class="perm-step"><b class="st-num">1</b><span>اضغط على <b>علامة الضبط أو القفل 🔒</b> جنب الرابط فوق في المتصفح ⬅ <b>الأذونات (Permissions)</b> ⬅ خلّي <b>الميكروفون: سماح (Allow)</b>.</span></div>
+      <div class="perm-step"><b class="st-num">2</b><span>لو المتصفح لسه مبيظهرش الرسالة، افتح <b>إعدادات الموبايل ⬅ التطبيقات ⬅ Chrome ⬅ الأذونات</b> واسمح بـ <b>الميكروفون</b>، أو استخدم <b>مايك الكيبورد 🎤</b> مباشرة.</span></div>
+    </div>
+  `;
+
+  const cityChosen = (LOC.ob && LOC.ob.c) || (profile && profile.city) || '';
+  const actionsHtml = isLoc ? `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+      <button class="btn mint" type="button" data-a="retryLoc">${ic('nav', 15)} جرّب طلب الموقع من المتصفح تاني</button>
+      <button class="btn white" type="button" data-a="useCityLoc">${ic('pin', 15)} ${cityChosen ? `اعتمد موقع مدينتي (${esc(cityChosen)}) وكمّل` : 'اختار محافظتي ومدينتي يدوياً وكمّل'}</button>
+    </div>
+  ` : `
+    <div class="meta" style="margin-top:8px">
+      ${!inApp ? `<button class="btn mint" style="flex:1" type="button" data-a="retryMic">${ic('mic', 15)} جرّب فتح المايكروفون تاني</button>` : `<button class="btn mint" style="flex:1" type="button" data-a="openExtBrowser">افتح في Chrome</button>`}
+      <button class="btn white" type="button" data-a="x">تمام</button>
+    </div>
+  `;
+
+  openModal(`
+    <h2>${title}</h2>
+    <p style="font-size:.86rem;color:var(--muted)">المتصفح عندك كتم نافذة السماح التلقائية — اتبع الخطوة السريعة دي وهتفتح معاك على طول:</p>
+    ${inAppBanner}
+    ${stepsHtml}
+    ${actionsHtml}
+  `);
+}
+
+function saveResolvedPos(lat: number, lng: number, acc: number, silent: boolean, cb?: any) {
+  const now = Date.now();
+  POS = { lat, lng, acc: Math.round(acc || 50) };
+  store.set('wasla_pos', JSON.stringify(POS));
+  store.set('wasla_loc_ts', String(now));
+  syncPermCards();
+  if (!silent) toast('اتحدد موقعك تمام ✓');
+  if (user && user.uid && isIn() && db) {
+    try {
+      profile.lat = POS.lat;
+      profile.lng = POS.lng;
+      profile.locUpdatedAtMs = now;
+      db.doc('users/' + user.uid).set({
+        lat: POS.lat,
+        lng: POS.lng,
+        locUpdatedAtMs: now,
+        roles: MY.on ? ['customer', 'provider'] : ['customer'],
+        updatedAt: SVT()
+      }, { merge: true }).catch(() => {});
+      if (MY.on) {
+        db.doc('providers/' + user.uid).update({ lat: POS.lat, lng: POS.lng, updatedAt: SVT() }).catch(() => {});
+      }
+    } catch (e) {}
+  }
+  if ($('#app').classList.contains('on') && !['طلب جديد', 'محادثة'].includes(cur)) softRender();
+  if (cb) cb(POS);
+}
+
+function locateNow(cb?: any, silent = false) {
+  if (!silent) _lastLocCb = cb || null;
+  if (!navigator.geolocation) {
+    if (!silent) showPermHelpModal('loc');
+    return;
+  }
+  if (!silent && !window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showPermHelpModal('loc');
+    return;
+  }
+  if (!silent) toast('لحظة بنطلب موقعك من المتصفح...');
+  const t0 = Date.now();
   navigator.geolocation.getCurrentPosition(
-    async p => {
-      const now = Date.now();
-      POS = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 50) };
-      store.set('wasla_pos', JSON.stringify(POS));
-      store.set('wasla_loc_ts', String(now));
-      syncPermCards();
-      if (!silent) toast('اتحدد موقعك تمام (±' + POS.acc + ' متر)');
-      if (user && user.uid && isIn() && db) {
-        try {
-          profile.lat = POS.lat;
-          profile.lng = POS.lng;
-          profile.locUpdatedAtMs = now;
-          await db.doc('users/' + user.uid).set({
-            lat: POS.lat,
-            lng: POS.lng,
-            locUpdatedAtMs: now,
-            roles: MY.on ? ['customer', 'provider'] : ['customer'],
-            updatedAt: SVT()
-          }, { merge: true });
-          if (MY.on) {
-            await db.doc('providers/' + user.uid).update({ lat: POS.lat, lng: POS.lng, updatedAt: SVT() }).catch(() => {});
-          }
-        } catch (e) {}
-      }
-      if ($('#app').classList.contains('on') && !['طلب جديد', 'محادثة'].includes(cur)) softRender();
-      if (cb) cb(POS);
-    },
+    p => saveResolvedPos(p.coords.latitude, p.coords.longitude, p.coords.accuracy || 50, silent, cb),
     e => {
+      // لو الـ GPS العالي الدقة اتأخر جوه البيت (code 2 أو 3)، نجرب فوراً تحديد الموقع بالشبكة/الواي فاي
+      if (e.code !== 1) {
+        navigator.geolocation.getCurrentPosition(
+          p2 => saveResolvedPos(p2.coords.latitude, p2.coords.longitude, p2.coords.accuracy || 250, silent, cb),
+          () => {
+            if (!silent) showPermHelpModal('loc');
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 180000 }
+        );
+        return;
+      }
       if (!silent) {
-        toast(e.code === 1
-          ? 'لازم تسمح بالوصول للموقع من المتصفح فوق علشان نكمّل.'
-          : 'معرفناش نجيب الموقع، اتأكد إن الـ GPS أو خدمة الموقع شغالة وجرّب تاني.');
+        if (Date.now() - t0 < 450 || isInAppBrowser()) {
+          showPermHelpModal('loc');
+        } else {
+          showPermHelpModal('loc');
+        }
       }
     },
-    { enableHighAccuracy: true, timeout: 14000, maximumAge: silent ? 300000 : 0 }
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: silent ? 300000 : 0 }
   );
 }
 
@@ -354,8 +473,8 @@ function checkWeeklyLocSync() {
 }
 
 function isNotifGranted() {
-  if (typeof Notification === 'undefined') return true; // متصفح لا يدعم واجهة الإشعارات أصلاً
-  return Notification.permission === 'granted';
+  if (typeof Notification === 'undefined') return true; // متصفح لا يدعم واجهة الإشعارات أصلاً (مثل Safari على iPhone)
+  return Notification.permission === 'granted' || PUSH_FALLBACK_OK;
 }
 
 function syncPermCards() {
@@ -365,7 +484,9 @@ function syncPermCards() {
     lc.classList.toggle('ok', ok);
     if (ok) lc.classList.remove('bad');
     li.innerHTML = ic(ok ? 'check' : 'nav', 20);
-    lt.textContent = ok ? `اتحدد موقعك بنجاح (±${POS.acc || 50} متر) وهيتحدث تلقائي كل أسبوع.` : 'لازم تحدد موقعك علشان نجبلك أقرب طلبات وصنايعية حواليك.';
+    lt.textContent = ok
+      ? `اتحدد موقعك بنجاح (${POS.cityFallback ? 'حسب مدينتك المختارة' : `±${POS.acc || 50} متر`}) وهيتحدث تلقائي كل أسبوع.`
+      : 'اضغط الزر علشان المتصفح يظهرلك نافذة الموافقة على الموقع ونجبلك أقرب خدمات حواليك.';
     lb.textContent = ok ? 'تم تحديد الموقع ✓ (تحديث)' : 'تحديد موقعي دلوقتي';
     lb.className = 'btn sm ' + (ok ? 'mint' : 'coral');
   }
@@ -375,7 +496,11 @@ function syncPermCards() {
     pc.classList.toggle('ok', ok);
     if (ok) pc.classList.remove('bad');
     pi.innerHTML = ic(ok ? 'check' : 'bell', 20);
-    pt.textContent = ok ? 'الإشعارات شغّالة تمام وهتوصلك أول بأول.' : (typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'الإشعارات مقفولة من المتصفح — افتح القفل جنب الرابط واسمح بيها.' : 'لازم تفعل الإشعارات علشان يوصلك تنبيه أول ما يجيلك عرض أو رسالة.');
+    pt.textContent = ok
+      ? (PUSH_FALLBACK_OK && typeof Notification !== 'undefined' && Notification.permission !== 'granted'
+          ? 'التنبيهات الفورية شغّالة جوه الموقع أول بأول ✓'
+          : 'الإشعارات شغّالة تمام وهتوصلك أول بأول.')
+      : 'لازم تفعل الإشعارات علشان يوصلك تنبيه أول ما يجيلك عرض أو رسالة.';
     pb.textContent = ok ? 'الإشعارات مفعّلة ✓' : 'تفعيل الإشعارات دلوقتي';
     pb.className = 'btn sm ' + (ok ? 'mint' : 'coral');
   }
@@ -386,20 +511,34 @@ $('#btn-ob-push').onclick = async () => {
   if (typeof Notification === 'undefined') {
     PUSH_ON = true;
     syncPermCards();
+    toast('التنبيهات مفعّلة تلقائياً على متصفحك ✓');
     return;
   }
+  const t0 = Date.now();
   try {
     const perm = await Notification.requestPermission();
     PUSH_ON = perm === 'granted';
-    store.set('push', PUSH_ON ? 'on' : 'off');
-    syncPermCards();
     if (PUSH_ON) {
+      PUSH_FALLBACK_OK = false;
+      store.set('push', 'on');
+      syncPermCards();
       toast('اتفعّلت الإشعارات بنجاح!');
+    } else if (Date.now() - t0 < 350 || isInAppBrowser()) {
+      // المتصفح الداخلي كتم نافذة الإشعارات أصلاً بدون سؤال المستخدم — نفعل التنبيهات الداخلية حتى لا يتعطل التسجيل
+      PUSH_FALLBACK_OK = true;
+      store.set('wasla_push_fbk', '1');
+      syncPermCards();
+      toast('المتصفح الحالي قافل إشعارات النظام، ففعّلنالك التنبيهات الفورية جوه الموقع ✓');
     } else {
-      toast('لازم توافق على إذن الإشعارات من المتصفح علشان تكمّل التسجيل.');
+      store.set('push', 'off');
+      syncPermCards();
+      toast('اضغط سماح (Allow) لما تظهرلك نافذة الإشعارات من المتصفح.');
     }
   } catch (e) {
-    toast('حصلت مشكلة في طلب الإشعارات، جرّب تاني.');
+    PUSH_FALLBACK_OK = true;
+    store.set('wasla_push_fbk', '1');
+    syncPermCards();
+    toast('فعّلنالك التنبيهات الفورية داخل الموقع ✓');
   }
 };
 
@@ -557,6 +696,17 @@ $('#intro-google').onclick = () => {
 
 async function gsign(hint?: string) {
   if (!auth) return toast('خدمة تسجيل جوجل بتحمّل، جرّب كمان ثانية.');
+  if (isInAppBrowser()) {
+    openModal(`
+      <h2>افتح في متصفح الموبايل لتسجيل جوجل</h2>
+      <p style="font-size:.9rem;line-height:1.7">جوجل بيمنع تسجيل الدخول جوه المتصفح الداخلي لفيسبوك أو ماسنجر لحماية حسابك. بضغطة واحدة افتح وصلة في <b>Chrome</b> وسجّل فوراً:</p>
+      <div class="meta" style="margin-top:8px">
+        <button class="btn coral" style="flex:1" type="button" data-a="openExtBrowser">${ic('share', 15)} افتح في Chrome الخارجي</button>
+        <button class="btn white" type="button" data-a="x">إلغاء</button>
+      </div>
+    `);
+    return false;
+  }
   const btns = $$('#login .arow, #intro-google');
   btns.forEach(b => { b.disabled = true; });
   try {
@@ -576,9 +726,19 @@ async function gsign(hint?: string) {
       go('s1');
     }
     return true;
-  } catch (e) {
+  } catch (e: any) {
+    if (e && e.code === 'auth/popup-blocked') {
+      try {
+        const pr2 = new firebase.auth.GoogleAuthProvider();
+        pr2.setCustomParameters({ prompt: 'select_account', ...(typeof hint === 'string' ? { login_hint: hint } : {}) });
+        await auth.signInWithRedirect(pr2);
+        return false;
+      } catch {}
+    }
     toast(e.code === 'auth/popup-closed-by-user'
       ? 'قفلت نافذة جوجل قبل ما تكمّل الدخول.'
+      : e.code === 'auth/unauthorized-domain'
+      ? 'ضيف الدومين ده (' + location.hostname + ') في Firebase Console ⬅ Authentication ⬅ Authorized domains.'
       : 'معرفناش نسجّل دخولك بجوجل (' + (e.code || 'تأكد من الرابط المصرح به') + ')');
     return false;
   } finally {
@@ -981,6 +1141,7 @@ function rebuildProv() {
         uid: d.id,
         n: d.name || 'مقدم خدمة',
         c: Math.max(0, Math.min(5, d.category | 0)),
+        spec: d.specialty || '',
         loc: d.city || '',
         gov: d.gov || govOf(d.city || ''),
         bio: d.bio || '',
@@ -1001,6 +1162,7 @@ function rebuildProv() {
       on: true,
       n: mineP.name || '',
       c: mineP.category | 0,
+      spec: mineP.specialty || '',
       gov: mineP.gov || '',
       city: mineP.city || '',
       bio: mineP.bio || '',
@@ -1325,7 +1487,7 @@ function provCard(p, idx) {
       ${avH(46, { name: p.n, photo: p.photo, preset: p.preset, bg: (CATS[p.c] || CATS[0])[2] })}
       <div>
         <h4>${esc(p.n)} ${p.v ? `<span title="حساب موثّق" style="color:#12806E">${ic('seal', 16)}</span>` : ''}</h4>
-        <small>${cic(p.c)} ${esc((CATS[p.c] || CATS[0])[0])}</small>
+        <small>${cic(p.c)} ${esc(p.spec ? `${p.spec} · ${(CATS[p.c] || CATS[0])[0]}` : (CATS[p.c] || CATS[0])[0])}</small>
       </div>
     </div>
     ${p.bio ? `<p class="desc">${esc(p.bio)}</p>` : ''}
@@ -1422,7 +1584,7 @@ VIEWS['الرئيسية'] = () => {
           ${shownProvs.map(p => `<button class="pc" type="button" data-a="prof" data-uid="${esc(p.uid)}">
             ${avH(50, { name: p.n, photo: p.photo, preset: p.preset, bg: (CATS[p.c] || CATS[0])[2] })}
             <b>${esc(p.n)}</b>
-            <small>${esc((CATS[p.c] || CATS[0])[0])}</small>
+            <small>${esc(p.spec || (CATS[p.c] || CATS[0])[0])}</small>
             ${p.rc > 0 ? `<span class="tag st">${ic('star', 11)} ${p.r.toFixed(1)}</span>` : '<span class="tag mint">متاح</span>'}
             ${dist(p) < 9000 ? `<small>${esc(kmTxt(dist(p)))}</small>` : `<small>${esc(p.loc)}</small>`}
           </button>`).join('')}
@@ -1559,10 +1721,10 @@ VIEWS['طلباتي'] = () => {
 
 /* 4. مقدمو الخدمة: مرتبين بالأقرب مع تحميل تدريجي وشيمر رمادي فضي */
 function provResultsHtml() {
-  const q = qS.trim().toLowerCase();
+  const q = AN(qS);
   const list = byNear(PROV).filter(p =>
     (catF < 0 || p.c === catF) &&
-    (!q || p.n.toLowerCase().includes(q) || (CATS[p.c] || CATS[0])[0].includes(q) || (p.bio || '').toLowerCase().includes(q)) &&
+    (!q || AN(p.n + ' ' + (p.spec || '') + ' ' + (CATS[p.c] || CATS[0])[0] + ' ' + (p.bio || '')).includes(q)) &&
     locOK(p.loc, p.gov)
   );
   const shown = list.slice(0, provPageLim);
@@ -1643,10 +1805,11 @@ VIEWS['ملف مقدم الخدمة'] = () => {
   const works = p ? (PROV_WORKS[uid] || []) : [];
   const verifiedProvDeals = pRevs.filter(x => x.verifiedDeal).length;
 
+  const provTitle = p ? (p.spec ? `${p.spec} (${catInfo![0]})` : catInfo![0]) : '';
   const roleLabel = p && userReqs.length
-    ? `${cic(p.c)} ${esc(catInfo![0])} · صاحب طلبات`
+    ? `${cic(p.c)} ${esc(provTitle)} · صاحب طلبات`
     : p
-    ? `${cic(p.c)} مقدم خدمة · ${esc(catInfo![0])}`
+    ? `${cic(p.c)} مقدم خدمة · ${esc(provTitle)}`
     : `${ic('user', 13)} عضو وصاحب طلبات على وصلة`;
 
   return `<div class="prov-page">
@@ -1879,9 +2042,13 @@ VIEWS['حسابي'] = () => {
 };
 
 const rqCatsHtml = () => `<div class="cats">${CATS.map((c, i) => `<button type="button" class="cat${RQ.c === i ? ' sel' : ''}" style="--c:${c[2]}" data-a="rcat" data-i="${i}"><span>${ic(c[1], 22)}</span>${c[0]}</button>`).join('')}</div>`;
-const rqSubsHtml = () => RQ.c < 0
-  ? '<small>اختار القسم فوق الأول وهنظهرلك التخصصات الفرعية.</small>'
-  : `<div class="fq">${[...(SUBS[RQ.c] || []), 'تخصص تاني'].map(s => chipBtn(RQ.sub === s, 'rsub', esc(s), esc(s))).join('')}</div>`;
+const rqSubsHtml = () => {
+  if (RQ.c < 0) return '<small>اختار القسم فوق الأول (أو اكتب عنوان الطلب وهنقترحلك القسم، وتقدر تكتب أي خدمة تانية بنفسك).</small>';
+  const baseSubs = SUBS[RQ.c] || [];
+  const isCustom = RQ.sub === '__custom__';
+  return `<div class="fq">${[...baseSubs.map(s => chipBtn(RQ.sub === s, 'rsub', esc(s), esc(s))), chipBtn(isCustom, 'rsub', '__custom__', '✎ خدمة أو مساعدة تانية (اكتبها بنفسك)')].join('')}</div>` +
+    (isCustom ? `<div class="cust-sub-box"><small>اكتب أي خدمة أو مساعدة محتاجها بالظبط:</small><input id="rcust-sub" value="${esc(RQ.customSub || '')}" placeholder="مثلاً: صيانة أسانسير، ممرض منزلي، تصوير، خياطة، محامي..."></div>` : '');
+};
 const rqImgsHtml = () => RQ.imgs.map((d: any, i: number) => {
   const su = safeImgUrl(d);
   return su ? `<div class="th"><img src="${esc(su)}" alt=""><button type="button" data-a="rimgx" data-i="${i}" aria-label="مسح">${ic('x', 13)}</button></div>` : '';
@@ -2032,7 +2199,7 @@ function smart(q) {
   const top = (arr, fn) => arr.map(x => ({ x, s: fn(x) })).filter(o => o.s >= 1.2).sort((a, b) => b.s - a.s).map(o => o.x);
   return {
     cats: CATS.map((c, i) => i).filter(i => cs[i] >= 0.6 || score(CATS[i][0], -1) >= 2).slice(0, 3),
-    provs: top(PROV.map((p, i) => ({ p, i })), o => score(o.p.n + ' ' + CATS[o.p.c][0] + ' ' + o.p.loc + ' ' + (o.p.bio || ''), o.p.c)).slice(0, 10),
+    provs: top(PROV.map((p, i) => ({ p, i })), o => score(o.p.n + ' ' + (o.p.spec || '') + ' ' + CATS[o.p.c][0] + ' ' + o.p.loc + ' ' + (o.p.bio || ''), o.p.c)).slice(0, 10),
     reqs: top(REQS.filter(r => r.rawStatus !== 'cancelled'), r => score(r.t + ' ' + r.d + ' ' + (r.sub || '') + ' ' + CATS[r.c][0] + ' ' + r.loc, r.c)).slice(0, 10)
   };
 }
@@ -2398,15 +2565,64 @@ const A = {
     }
   },
 
+  openExtBrowser() {
+    closeModal();
+    openInExternalChrome();
+  },
+  retryLoc() {
+    closeModal();
+    locateNow(_lastLocCb, false);
+  },
+  useCityLoc() {
+    const g = (LOC.ob && LOC.ob.g) || (profile && profile.gov) || '';
+    const c = (LOC.ob && LOC.ob.c) || (profile && profile.city) || '';
+    if (!c) {
+      closeModal();
+      pickLoc('ob');
+      toast('اختار محافظتك ومدينتك الأول وهنعتمد موقعها فوراً ✓');
+      return;
+    }
+    const xy = xyOf(g, c) || [30.0444, 31.2357];
+    closeModal();
+    POS = { lat: xy[0], lng: xy[1], acc: 500, cityFallback: true };
+    const now = Date.now();
+    store.set('wasla_pos', JSON.stringify(POS));
+    store.set('wasla_loc_ts', String(now));
+    syncPermCards();
+    toast('اتعتمد موقع مدينتك (' + c + ') بنجاح ✓');
+    if (_lastLocCb) _lastLocCb(POS);
+  },
+  retryMic() {
+    const target = _lastVoiceTarget;
+    closeModal();
+    if (target && document.body.contains(target)) {
+      toggleVoice(target);
+    }
+  },
+
   nw() {
     if (gate(() => A.nw())) return;
-    RQ = { c: -1, sub: '', imgs: [], xy: POS ? [POS.lat, POS.lng] : null, need: 'في أقرب وقت' };
+    RQ = { c: -1, sub: '', customSub: '', imgs: [], xy: POS ? [POS.lat, POS.lng] : null, need: 'في أقرب وقت' };
     LOC.rq = { g: profile.gov || '', c: profile.city || '' };
     goTo('طلب جديد');
   },
 
-  rcat(b) { RQ.c = +b.dataset.i; RQ.sub = ''; $('#rcats').innerHTML = rqCatsHtml(); $('#rsubs').innerHTML = rqSubsHtml(); },
-  rsub(b) { RQ.sub = b.dataset.i; $('#rsubs').innerHTML = rqSubsHtml(); },
+  rcat(b) {
+    RQ.c = +b.dataset.i;
+    RQ.sub = '';
+    $('#rcats').innerHTML = rqCatsHtml();
+    $('#rsubs').innerHTML = rqSubsHtml();
+    enhanceVoiceInputs($('#rsubs'));
+  },
+  rsub(b) {
+    RQ.sub = b.dataset.i;
+    $('#rsubs').innerHTML = rqSubsHtml();
+    enhanceVoiceInputs($('#rsubs'));
+    if (RQ.sub === '__custom__') {
+      const inp = $('#rcust-sub');
+      if (inp) inp.focus();
+    }
+  },
   rimg() { pickImg(900, false, d => { RQ.imgs.push(d); $('#rimgs').innerHTML = rqImgsHtml(); }); },
   rimgx(b) { RQ.imgs.splice(+b.dataset.i, 1); $('#rimgs').innerHTML = rqImgsHtml(); },
   rloc() {
@@ -2428,11 +2644,18 @@ const A = {
       const n = w.filter(x => kwList.some(y => y.length > 2 && (x.includes(y) || y.includes(x)))).length;
       if (n > sc) { sc = n; best = Number(i); }
     });
-    if (best < 0) best = 1;
+    if (best < 0) best = 4;
     RQ.c = best;
-    RQ.sub = (SUBS[best] || []).find(s => AN(t).includes(AN(s).split(' ')[0])) || (SUBS[best] || [])[0] || '';
+    const matchedSub = (SUBS[best] || []).find(s => AN(t).includes(AN(s).split(' ')[0]));
+    if (matchedSub) {
+      RQ.sub = matchedSub;
+    } else {
+      RQ.sub = '__custom__';
+      RQ.customSub = cleanInput(t, 60);
+    }
     $('#rcats').innerHTML = rqCatsHtml();
     $('#rsubs').innerHTML = rqSubsHtml();
+    enhanceVoiceInputs($('#rsubs'));
     const d = $('#rd');
     if (d && !d.value.trim()) {
       d.value = `محتاج ${t}. يا ريت في العرض توضحلي التكلفة النهائية وتقدر تيجي إمتى بالظبط.`;
@@ -2447,9 +2670,19 @@ const A = {
     const t = cleanInput(($('#rt') && $('#rt').value) || '', 140);
     const d = cleanInput(($('#rd') && $('#rd').value) || '', 2000);
     const L = LOC.rq;
-    if (RQ.c < 0) return toast('اختار القسم الأول.');
-    if (!RQ.sub) return toast('اختار التخصص الفرعي للخدمة.');
     if (!t || !d) return toast('اكتب عنوان الطلب وتفاصيله علشان الناس تفهم المطلوب.');
+    if (RQ.c < 0) {
+      const w = AN(t + ' ' + d).split(/\s+/);
+      let best = 4, sc = 0;
+      KW.forEach(([i, k]) => {
+        const kwList = AN(String(k)).split(' ');
+        const n = w.filter(x => kwList.some(y => y.length > 2 && (x.includes(y) || y.includes(x)))).length;
+        if (n > sc) { sc = n; best = Number(i); }
+      });
+      RQ.c = best;
+    }
+    const custVal = cleanInput((($('#rcust-sub') && $('#rcust-sub').value) || RQ.customSub || ''), 80);
+    const finalSub = RQ.sub === '__custom__' ? (custVal || cleanInput(t, 60)) : (RQ.sub || custVal || cleanInput(t, 60));
     if (!L.c) return toast('اختار المحافظة والمدينة.');
 
     const btn = $('[data-a="post"]');
@@ -2470,7 +2703,7 @@ const A = {
         title: t,
         description: d,
         category: RQ.c,
-        sub: RQ.sub,
+        sub: finalSub,
         budget: bd ? bd + ' ج' : 'مفتوحة',
         neededBy: need,
         locText: (area ? area + ' - ' : '') + L.c + ' · ' + L.g,
@@ -2816,15 +3049,23 @@ const A = {
     }
   },
 
-  /* التسجيل وتعديل ملف مقدم الخدمة */
+  /* التسجيل وتعديل ملف مقدم الخدمة (متاح لأي صنعة أو خدمة أو مهنة في مصر) */
   bp() {
     if (gate(() => A.bp())) return;
     LOC.pv = { g: MY.gov || profile.gov || '', c: MY.city || profile.city || '' };
+    const initCat = MY.c || 0;
+    const renderSpecChips = (catIdx: number) =>
+      (SUBS[catIdx] || []).slice(0, 6).map(s => `<button type="button" class="chip" data-a="pspecPick" data-i="${esc(s)}">${esc(s)}</button>`).join('');
     openModal(`
       <h2>${MY.on ? 'تعديل ملفك كمقدم خدمة' : 'سجّل كمقدم خدمة على وصلة'}</h2>
-      <p style="font-size:.86rem;color:var(--muted)">علشان تقدر تبعت عروض أسعار لأي حد بينشر طلب وتظهر في قايمة الصنايعية ومقدمين الخدمة القريبين.</p>
-      <div class="field"><label for="pn">اسمك أو اسم الورشة / الشركة</label><input id="pn" value="${esc(MY.n || myDisplayName())}" placeholder="مثلاً: الأسطى محمود للسباكة / شركة النور"></div>
-      <div class="field"><label for="pc">تخصصك الأساسي</label><select id="pc">${CATS.map((c, i) => `<option value="${i}"${i === (MY.c || 0) ? ' selected' : ''}>${c[0]}</option>`).join('')}</select></div>
+      <p style="font-size:.86rem;color:var(--muted)">تقدر تقدّم <b>أي خدمة أو صنعة أو مهنة</b> متاحة عندك، وتبعت عروض لأي حد بينشر طلب حواليك.</p>
+      <div class="field"><label for="pn">اسمك أو اسم الورشة / النشاط</label><input id="pn" value="${esc(MY.n || myDisplayName())}" placeholder="مثلاً: الأسطى محمود / دكتور أحمد / شركة النور"></div>
+      <div class="field"><label for="pc">القسم العام</label><select id="pc">${CATS.map((c, i) => `<option value="${i}"${i === initCat ? ' selected' : ''}>${c[0]}</option>`).join('')}</select></div>
+      <div class="field">
+        <label for="pspec">المهنة أو الخدمة الدقيقة اللي بتقدمها (اكتب أي خدمة أو اختار من تحت)</label>
+        <input id="pspec" value="${esc(MY.spec || '')}" placeholder="اكتب أي خدمة بتقدمها (مثلاً: سباك صحي، ممرض منزلي، مصمم جرافيك، شيف...)">
+        <div class="fq" id="pspec-chips" style="margin-top:4px">${renderSpecChips(initCat)}</div>
+      </div>
       <div class="field"><label>المحافظة والمركز</label>${locBtn('pv')}</div>
       <div class="names" style="grid-template-columns:1fr 1fr">
         <div class="field"><label for="py">سنين الخبرة</label><input id="py" type="number" inputmode="numeric" value="${MY.y || ''}" placeholder="مثلاً: 7"></div>
@@ -2835,21 +3076,37 @@ const A = {
           </select>
         </div>
       </div>
-      <div class="field"><label for="pbio">نبذة سريعة عن شغلك ومواعيدك (اختياري)</label><textarea id="pbio" style="min-height:72px" placeholder="مثلاً: خبرة في تأسيس وتشطيب السباكة، متاح يومياً من 9 ص لـ 10 م...">${esc(MY.bio || '')}</textarea></div>
+      <div class="field"><label for="pbio">نبذة سريعة عن شغلك وخدماتك ومواعيدك (اختياري)</label><textarea id="pbio" style="min-height:72px" placeholder="مثلاً: بقدّم كافة أعمال الصيانة والتأسيس، متاح يومياً من 9 ص لـ 10 م...">${esc(MY.bio || '')}</textarea></div>
       ${mbtns('savep', MY.on ? 'حفظ التعديلات' : 'تفعيل حساب مقدم الخدمة')}
     `);
+    const pcEl = $('#pc');
+    if (pcEl) {
+      pcEl.onchange = () => {
+        const ch = $('#pspec-chips');
+        if (ch) ch.innerHTML = renderSpecChips(+pcEl.value || 0);
+      };
+    }
+  },
+
+  pspecPick(b) {
+    const inp = $('#pspec');
+    if (inp) {
+      inp.value = b.dataset.i || '';
+      syncMicVisibility(inp);
+    }
   },
 
   async savep() {
     if (!db || !user) return;
-    const n = (($('#pn') && $('#pn').value) || '').trim();
+    const n = cleanInput((($('#pn') && $('#pn').value) || ''), 90);
     if (!n) return toast('اكتب اسمك أو اسم النشاط الأول.');
     if (!LOC.pv.c) return toast('اختار المحافظة والمدينة.');
     const g = LOC.pv.g, c = LOC.pv.c;
-    const cat = +$('#pc').value;
+    const cat = Math.max(0, Math.min(5, +$('#pc').value || 0));
+    const spec = cleanInput((($('#pspec') && $('#pspec').value) || ''), 80);
     const years = Math.max(0, Math.min(60, parseInt($('#py').value || '0', 10) || 0));
     const available = $('#pok').value === '1';
-    const bio = (($('#pbio') && $('#pbio').value) || '').trim();
+    const bio = cleanInput((($('#pbio') && $('#pbio').value) || ''), 1200);
     const xy = POS ? [POS.lat, POS.lng] : xyOf(g, c);
 
     const btn = $('[data-a="savep"]');
@@ -2859,6 +3116,7 @@ const A = {
       const data = {
         name: n,
         category: cat,
+        specialty: spec,
         gov: g,
         city: c,
         years,
@@ -2874,7 +3132,7 @@ const A = {
       if (ex.exists) await ref.update(data);
       else await ref.set({ ...data, ownerId: user.uid, verified: false, ratingAvg: 0, ratingCount: 0, createdAt: SVT() });
 
-      MY = { on: true, n, c: cat, gov: g, city: c, y: years, ok: available, bio, r: MY.r || 0, rc: MY.rc || 0 };
+      MY = { on: true, n, c: cat, spec, gov: g, city: c, y: years, ok: available, bio, r: MY.r || 0, rc: MY.rc || 0 };
       await db.doc('users/' + user.uid).set({ roles: ['customer', 'provider'], updatedAt: SVT() }, { merge: true }).catch(() => {});
       closeModal();
       toast('ألف مبروك! اتفعّل حسابك كمقدم خدمة وتقدر تقدّم عروض دلوقتي.');
@@ -3537,6 +3795,8 @@ function goTo(n) {
   sh.classList.toggle('full', isSub);
   sh.classList.toggle('chat-mode', n === 'محادثة');
   $('#bk').style.display = isSub ? '' : 'none';
+  const topHeader = $('#shell .top');
+  if (topHeader) topHeader.classList.remove('top-hide');
 
   drawNav();
   render();
@@ -3707,6 +3967,7 @@ function stopVoice() {
 
 function toggleVoice(el) {
   if (!el) return;
+  _lastVoiceTarget = el;
   if (_voiceActive && _voiceEl === el) {
     stopVoice();
     toast('وقفنا الكتابة بالصوت ✓');
@@ -3714,16 +3975,19 @@ function toggleVoice(el) {
   }
   if (_voiceActive) stopVoice();
 
+  if (typeof window !== 'undefined' && !window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showPermHelpModal('mic');
+    return;
+  }
+
+  if (isInAppBrowser() && !SR_CLS) {
+    showPermHelpModal('mic');
+    return;
+  }
+
   if (!SR_CLS) {
-    openModal(`
-      <h2>الكتابة بالصوت في المتصفح ده</h2>
-      <p style="font-size:.92rem;line-height:1.7">متصفحك الحالي قافل ميزة التعرف على الصوت افتراضياً. علشان تشتغل معاك فوراً:</p>
-      <div class="ofr" style="border-style:solid;background:var(--bg)">
-        <span>• افتح الموقع من <b>Chrome</b> أو <b>Edge</b> أو من <b>الموبايل</b> وهتشتغل معاك باللهجة المصرية فوراً.</span>
-        <span>• أو في فايرفوكس اكتب <b dir="ltr">about:config</b> وفعل <b dir="ltr">media.webspeech.recognition.enable</b>.</span>
-      </div>
-      <div class="meta"><button class="btn mint" style="flex:1" type="button" data-a="x">تمام فهمت</button></div>
-    `);
+    el.focus && el.focus();
+    showPermHelpModal('speech-service');
     return;
   }
 
@@ -3772,8 +4036,9 @@ function toggleVoice(el) {
 
       rec.onerror = ev => {
         if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+          _micPrimed = false;
           stopVoice();
-          toast('اسمح بالمايكروفون من المتصفح فوق علشان نكتب كلامك تلقائي.');
+          showPermHelpModal(ev.error === 'service-not-allowed' ? 'speech-service' : 'mic');
         } else if (ev.error === 'audio-capture') {
           stopVoice();
           toast('مفيش مايكروفون متوصل بالجهاز حالياً.');
@@ -3803,9 +4068,36 @@ function toggleVoice(el) {
       rec.start();
     } catch (e) {
       stopVoice();
-      toast('معرفناش نفتح المايكروفون، جرّب تاني.');
+      showPermHelpModal('mic');
     }
   };
+
+  // طلب إذن المايكروفون الأصلي من المتصفح أولاً على الموبايل علشان تظهر نافذة (سماح / حظر) فوراً وبشكل مضمون
+  if (!_micPrimed && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+    const t0 = Date.now();
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        try { stream.getTracks().forEach(tr => tr.stop()); } catch {}
+        _micPrimed = true;
+        setTimeout(() => {
+          if (_voiceActive && _voiceEl === el) startUtterance();
+        }, 60);
+      })
+      .catch(err => {
+        stopVoice();
+        const nm = String((err && err.name) || '');
+        if (nm === 'NotFoundError' || nm === 'DevicesNotFoundError') {
+          toast('مفيش مايكروفون متوصل بالجهاز حالياً.');
+          return;
+        }
+        if (Date.now() - t0 < 420 || isInAppBrowser()) {
+          showPermHelpModal('mic');
+        } else {
+          toast('اضغط «سماح / Allow» على رسالة المايكروفون علشان تكتب بصوتك.');
+        }
+      });
+    return;
+  }
 
   startUtterance();
 }
@@ -3912,6 +4204,10 @@ document.addEventListener('keydown', (e: any) => {
   }
 });
 document.addEventListener('input', (e: any) => {
+  if (e.target?.id === 'rcust-sub') {
+    RQ.customSub = e.target.value;
+    return;
+  }
   if (e.target?.id === 'cm') {
     syncChatComposerUI();
     return;
@@ -3933,6 +4229,47 @@ document.addEventListener('input', (e: any) => {
     g.innerHTML = h || `<button type="button" data-a="search">${ic('search', 17)}<span>دوّر على «${esc(v)}»</span></button>`;
   }
 });
+
+/* الشريط العلوي المتطور: يختفي بنعومة عند النزول لأسفل، ويظهر فوراً بمجرد الطلوع لأعلى شوية */
+(function setupSmartTopBar() {
+  const mainEl = $('#shell .main');
+  let lastWinY = 0;
+  let lastMainY = 0;
+  let ticking = false;
+
+  function onScroll(fromMain: boolean) {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const topEl = $('#shell .top');
+      if (!topEl || !$('#app').classList.contains('on')) return;
+      if (cur === 'محادثة') {
+        topEl.classList.remove('top-hide');
+        return;
+      }
+      const isDesktopScroll = window.innerWidth >= 900 && !!mainEl;
+      if (fromMain !== isDesktopScroll) return;
+
+      const y = Math.max(0, isDesktopScroll ? mainEl.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0));
+      const prev = isDesktopScroll ? lastMainY : lastWinY;
+      const dy = y - prev;
+      if (isDesktopScroll) lastMainY = y;
+      else lastWinY = y;
+
+      if (y <= 40) {
+        topEl.classList.remove('top-hide');
+      } else if (dy >= 9 && y > 60) {
+        topEl.classList.add('top-hide');
+      } else if (dy <= -6) {
+        topEl.classList.remove('top-hide');
+      }
+    });
+  }
+
+  window.addEventListener('scroll', () => onScroll(false), { passive: true });
+  if (mainEl) mainEl.addEventListener('scroll', () => onScroll(true), { passive: true });
+})();
 
 /* استرجاع نفس المكان والصفحة فوراً عند عمل تحديث (Refresh) بدون الرجوع لبداية الدخول */
 startLive();
