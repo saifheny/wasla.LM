@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // صور الملف الشخصي وأعمال مقدم الخدمة ومرفقات الطلبات العامة: حظر SVG والملفات التنفيذية وقصر الرفع على الصور النقطية الآمنة
+    match /{area}/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && area in ['avatars', 'works', 'requests']
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)');
+    }
+
+    // مرفقات المحادثات الخاصة: القراءة للمستخدمين المسجلين فقط والرفع لصاحب الحساب بحد أقصى 3 ميجابايت
+    match /chats/{uid}/{fileName} {
+      // القراءة للمالك فقط؛ الطرف الآخر بيشوف الملف عن طريق رابط التحميل الموقّع (token) المخزن في الرسالة
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && (
+          (request.resource.size < 3 * 1024 * 1024
+            && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)'))
+          || (request.resource.size < 6 * 1024 * 1024
+            && request.resource.contentType.matches('audio/(webm|ogg|mp4|mpeg|aac|x-m4a|wav)'))
+        );
+    }
+  }
+}

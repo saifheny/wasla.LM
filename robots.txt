@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /functions/
+Disallow: /src/
+Disallow: /scripts/
+
+Sitemap: https://saifheny.github.io/wasla.LM/sitemap.xml

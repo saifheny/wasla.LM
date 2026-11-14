@@ -1,0 +1,315 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    // الأدمن بيتحدد بـ custom claim بيتضاف من Admin SDK بس (مش من حقل في الداتا)
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function reqDoc(rid) { return get(/databases/$(db)/documents/requests/$(rid)).data; }
+
+    function optStr(d, k, maxLen) {
+      return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= maxLen);
+    }
+    function optList(d, k, maxLen) {
+      return !(k in d) || d[k] == null || (d[k] is list && d[k].size() <= maxLen);
+    }
+    function optEmptyStr(d, k) {
+      return !(k in d) || d[k] == null || (d[k] is string && d[k].size() == 0);
+    }
+    function optEmptyList(d, k) {
+      return !(k in d) || d[k] == null || (d[k] is list && d[k].size() == 0);
+    }
+    function optNullOrAbsent(d, k) {
+      return !(k in d) || d[k] == null;
+    }
+
+    function validVerifiedDeal(rid, providerUid) {
+      return exists(/databases/$(db)/documents/requests/$(rid))
+        && reqDoc(rid).ownerId == request.auth.uid
+        && reqDoc(rid).status == 'completed'
+        && (
+          reqDoc(rid).get('completedProviderId', '') == providerUid
+          || exists(/databases/$(db)/documents/requests/$(rid)/offers/$(providerUid))
+        );
+    }
+
+    function validWarningProof(d) {
+      let pid = d.get('proofId', '');
+      let ptype = d.get('proofType', '');
+      let tid = d.targetId;
+      return pid is string && pid.size() > 0 && pid.size() <= 180
+        && ptype == 'mutual_req'
+        && exists(/databases/$(db)/documents/requests/$(pid))
+        && reqDoc(pid).status == 'completed'
+        && reqDoc(pid).get('clientDone', false) == true
+        && reqDoc(pid).get('providerDone', false) == true
+        && (
+          (reqDoc(pid).ownerId == request.auth.uid && reqDoc(pid).get('completedProviderId', '') == tid)
+          || (reqDoc(pid).get('completedProviderId', '') == request.auth.uid && reqDoc(pid).ownerId == tid)
+        );
+    }
+
+    function otherPartyProtected(resData, reqData) {
+      let otherUid = resData.participants[0] == request.auth.uid
+        ? resData.participants[1]
+        : resData.participants[0];
+      return reqData.get('seenCount', {}).get(otherUid, -1)
+          == resData.get('seenCount', {}).get(otherUid, -1)
+        && reqData.get('names', {}).get(otherUid, '__none__')
+          == resData.get('names', {}).get(otherUid, '__none__')
+        && reqData.get('photos', {}).get(otherUid, '__none__')
+          == resData.get('photos', {}).get(otherUid, '__none__');
+    }
+
+    // ملف المستخدم (خاص ومحمى بالكامل)
+    match /users/{uid} {
+      allow read: if owner(uid) || isAdmin();
+      allow create, update: if owner(uid)
+        && (!('roles' in request.resource.data) || request.resource.data.roles.hasOnly(['customer', 'provider']))
+        && optStr(request.resource.data, 'first', 60)
+        && optStr(request.resource.data, 'second', 60)
+        && optStr(request.resource.data, 'third', 60)
+        && optStr(request.resource.data, 'phone', 25)
+        && optStr(request.resource.data, 'area', 200);
+      allow delete: if isAdmin();
+    }
+
+    // ملف مقدم الخدمة (عام)، والحقول الحساسة بتتعدل من الإدارة أو الدوال بس
+    match /providers/{uid} {
+      allow read: if true;
+      allow create: if owner(uid)
+        && request.resource.data.get('verified', false) == false
+        && request.resource.data.get('ratingCount', 0) == 0
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 100
+        && optStr(request.resource.data, 'specialty', 120)
+        && optStr(request.resource.data, 'bio', 1500)
+        && request.resource.data.category is int
+        && request.resource.data.category >= 0
+        && request.resource.data.category <= 5;
+      allow update: if owner(uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['verified', 'ratingAvg', 'ratingCount', 'boostUntil', 'plan', 'suspended'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['name'])
+            || (request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 100))
+        && optStr(request.resource.data, 'specialty', 120)
+        && optStr(request.resource.data, 'bio', 1500)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['category'])
+            || (request.resource.data.category is int && request.resource.data.category >= 0 && request.resource.data.category <= 5));
+      allow write: if isAdmin();
+
+      match /works/{wid} {
+        allow read: if true;
+        allow create, update: if (owner(uid)
+          && request.resource.data.keys().hasOnly(['img', 'title', 'createdAt', 'updatedAt'])
+          && request.resource.data.img is string
+          && request.resource.data.img.size() >= 5
+          && request.resource.data.img.size() <= 350000
+          && optStr(request.resource.data, 'title', 200)) || isAdmin();
+        allow delete: if owner(uid) || isAdmin();
+      }
+    }
+
+    // الأقسام
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // الطلبات
+    match /requests/{rid} {
+      allow read: if true; // الطلبات عامة علشان الزائر يتصفح (مفيش أرقام موبايل فيها)
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'new'
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 3
+        && request.resource.data.description.size() <= 2500
+        && optList(request.resource.data, 'imgs', 3)
+        && request.resource.data.category is int
+        && request.resource.data.category >= 0
+        && request.resource.data.category <= 5;
+      allow update: if (owner(resource.data.ownerId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'acceptedProviderId', 'completedProviderId', 'clientDone', 'title', 'description', 'budget', 'neededBy', 'contactPref', 'sub', 'locText', 'gov', 'city', 'lat', 'lng', 'imgs', 'updatedAt'])
+        && request.resource.data.get('status', 'new') in ['new', 'open', 'accepted', 'completed', 'cancelled', 'deleted']
+        && (!('clientDone' in request.resource.data) || request.resource.data.clientDone == null || request.resource.data.clientDone is bool)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title', 'description'])
+            || (request.resource.data.title is string
+                && request.resource.data.title.size() >= 3
+                && request.resource.data.title.size() <= 160
+                && request.resource.data.description is string
+                && request.resource.data.description.size() >= 3
+                && request.resource.data.description.size() <= 2500))
+        && optStr(request.resource.data, 'budget', 60)
+        && optList(request.resource.data, 'imgs', 3))
+        || (signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['providerDone', 'updatedAt'])
+          && request.resource.data.providerDone == true
+          && (
+            resource.data.get('completedProviderId', '') == request.auth.uid
+            || resource.data.get('acceptedProviderId', '') == request.auth.uid
+            || (
+              exists(/databases/$(db)/documents/requests/$(rid)/offers/$(request.auth.uid))
+              && get(/databases/$(db)/documents/requests/$(rid)/offers/$(request.auth.uid)).data.status == 'accepted'
+            )
+          ));
+      allow delete: if owner(resource.data.ownerId);
+      allow write: if isAdmin();
+
+      // العروض (متاحة فقط لمقدم خدمة مفعّل وبعرض واحد لكل مقدم على الطلب المفتوح)
+      match /offers/{oid} {
+        allow read: if signedIn()
+          && (resource.data.providerId == request.auth.uid || reqDoc(rid).ownerId == request.auth.uid);
+        allow create: if signedIn()
+          && oid == request.auth.uid
+          && request.resource.data.providerId == request.auth.uid
+          && exists(/databases/$(db)/documents/providers/$(request.auth.uid))
+          && reqDoc(rid).ownerId != request.auth.uid
+          && reqDoc(rid).status in ['new', 'open']
+          && request.resource.data.status == 'pending'
+          && request.resource.data.price is number
+          && request.resource.data.price > 0
+          && request.resource.data.price <= 5000000
+          && optStr(request.resource.data, 'message', 1500);
+        allow update: if signedIn() && reqDoc(rid).ownerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['pending', 'accepted', 'rejected'];
+        allow delete: if owner(resource.data.providerId) || isAdmin();
+      }
+
+      // سجل التوزيع بتكتبه الدوال بس
+      match /dispatches/{pid} {
+        allow read: if owner(pid) || owner(reqDoc(rid).ownerId) || isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // المحادثات الخاصة بين طرفين فقط (مع حماية بيانات وعدّاد الطرف التاني)
+    match /conversations/{cid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn()
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.participants[0] != request.resource.data.participants[1]
+        && request.auth.uid in request.resource.data.participants
+        && cid == (request.resource.data.participants[0] + '_' + request.resource.data.participants[1])
+        && request.resource.data.get('lastSender', request.auth.uid) == request.auth.uid
+        && optStr(request.resource.data, 'lastText', 2000);
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['names', 'photos', 'lastText', 'lastTime', 'lastSender', 'seenCount', 'seenSig', 'updatedAt', 'blockedBy', 'archivedBy', 'clearedAt', 'pinnedBy', 'pinnedMsg'])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastSender'])
+          || request.resource.data.lastSender == request.auth.uid
+        )
+        && optStr(request.resource.data, 'lastText', 2000)
+        && otherPartyProtected(resource.data, request.resource.data);
+
+      match /messages/{mid} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(db)/documents/conversations/$(cid)).data.participants;
+        allow create: if signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(db)/documents/conversations/$(cid)).data.participants
+          && optStr(request.resource.data, 'text', 2000)
+          && optStr(request.resource.data, 'img', 350000)
+          && optList(request.resource.data, 'imgs', 3)
+          && optStr(request.resource.data, 'audio', 600000)
+          && optList(request.resource.data, 'peaks', 64);
+        // delete for everyone: sender only
+        allow delete: if signedIn()
+          && resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(db)/documents/conversations/$(cid)).data.participants;
+        // delete for me + reactions + text-only edit by sender
+        allow update: if signedIn()
+          && request.auth.uid in get(/databases/$(db)/documents/conversations/$(cid)).data.participants
+          && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hiddenFor', 'reactions'])
+            || (
+              resource.data.senderId == request.auth.uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt'])
+              && optEmptyStr(resource.data, 'img')
+              && optEmptyList(resource.data, 'imgs')
+              && optEmptyStr(resource.data, 'audio')
+              && optNullOrAbsent(resource.data, 'loc')
+              && request.resource.data.text is string
+              && request.resource.data.text.size() >= 1
+              && request.resource.data.text.size() <= 2000
+            )
+          );
+      }
+    }
+
+    // الإشعارات: المستخدم يقرأها ويعلّمها مقروءة، والدوال بتنشئها
+    match /notifications/{uid}/items/{nid} {
+      allow read: if owner(uid);
+      allow update: if owner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create: if false;
+      allow delete: if owner(uid);
+    }
+
+    // التقييمات الموثّقة فقط: ممنوع أي تقييم إلا لصاحب طلب مكتمل فعلياً مع مقدم الخدمة المعني
+    match /reviews/{rid} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.providerId is string
+        && request.resource.data.providerId != request.auth.uid
+        && request.resource.data.verifiedDeal == true
+        && validVerifiedDeal(rid, request.resource.data.providerId)
+        && request.resource.data.stars is int
+        && request.resource.data.stars >= 1 && request.resource.data.stars <= 5
+        && optStr(request.resource.data, 'comment', 1500);
+      allow update: if (signedIn()
+        && resource.data.customerId == request.auth.uid
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.providerId is string
+        && request.resource.data.providerId != request.auth.uid
+        && request.resource.data.verifiedDeal == true
+        && validVerifiedDeal(rid, request.resource.data.providerId)
+        && request.resource.data.stars is int
+        && request.resource.data.stars >= 1 && request.resource.data.stars <= 5
+        && optStr(request.resource.data, 'comment', 1500)) || isAdmin();
+      allow delete: if (signedIn() && resource.data.customerId == request.auth.uid) || isAdmin();
+    }
+
+    // علامات التحذير المجتمعية (مرة واحدة فقط من كل شخص مختلف + اشتراط وجود تعامل موثق فعلي على السيرفر)
+    match /warnings/{wid} {
+      allow read: if true;
+      allow create: if signedIn()
+        && wid == (request.resource.data.targetId + '_' + request.auth.uid)
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.targetId != request.auth.uid
+        && validWarningProof(request.resource.data)
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 120
+        && request.resource.data.details is string
+        && request.resource.data.details.size() >= 20
+        && request.resource.data.details.size() <= 1500;
+      allow update: if false;
+      allow delete: if (signedIn() && resource.data.reporterId == request.auth.uid) || isAdmin();
+    }
+
+    // البلاغات
+    match /reports/{id} {
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && validWarningProof(request.resource.data)
+        && optStr(request.resource.data, 'details', 1500);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // الباقات والإعلانات
+    match /plans/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /ads/{id}   { allow read: if true; allow write: if isAdmin(); }
+  }
+}
